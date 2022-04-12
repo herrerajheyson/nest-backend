@@ -1,66 +1,47 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import {
   CreateProductDto,
   UpdateProductDto,
 } from 'src/dtos/products/products.dtos';
 import { Product } from 'src/entities/product.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class ProductsService {
-  private counterId = 1;
-  private products: Product[] = [
-    {
-      id: 1,
-      name: 'Product N°1',
-      description: 'Description product n°1',
-      price: 122,
-      stock: 12,
-      image: '',
-    },
-  ];
+  constructor(
+    @InjectRepository(Product)
+    private readonly products: Repository<Product>,
+  ) {}
 
-  findAll() {
-    return this.products;
+  async findAll() {
+    return await this.products.find();
   }
 
-  findOne(id: number) {
-    const product = this.products.find((item) => item.id === id);
-    if (!product) {
-      throw new NotFoundException(`Product #${id} not found`);
+  async findOne(id: number) {
+    const response = await this.products.findOne(id);
+    if (!response) {
+      throw new NotFoundException(`Product ${id} not found`);
     }
-    return product;
+    return response;
   }
 
-  create(payload: CreateProductDto) {
-    this.counterId++;
-    const newProduct = {
-      id: this.counterId,
-      ...payload,
+  async create(payload: CreateProductDto) {
+    await this.products.insert(payload);
+    return payload;
+  }
+
+  async update(id: number, payload: UpdateProductDto) {
+    await this.products.update(id, payload);
+    return {
+      message: `Product ${id} updated`,
     };
-    this.products.push(newProduct);
-    return newProduct;
   }
 
-  update(id: number, payload: UpdateProductDto) {
-    const product = this.findOne(id);
-    if (!product) {
-      throw new NotFoundException(`Product #${id} not found on update`);
-    }
-
-    const index = this.products.findIndex((item) => item.id === id);
-    this.products[index] = {
-      ...product,
-      ...payload,
+  async delete(id: number) {
+    await this.products.delete(id);
+    return {
+      message: `Product ${id} deleted`,
     };
-    return this.products[index];
-  }
-
-  delete(id: number) {
-    const index = this.products.findIndex((item) => item.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`Product #${id} not found`);
-    }
-    this.products.splice(index, 1);
-    return true;
   }
 }
