@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto, UpdateUserDto } from 'src/dtos/users/users.dtos';
 import { User } from 'src/entities/user.entity';
@@ -24,7 +28,11 @@ export class UsersService {
   }
 
   async create(payload: CreateUserDto) {
-    await this.users.insert(payload);
+    try {
+      await this.users.insert(payload);
+    } catch (error) {
+      throw new InternalServerErrorException('Server Error ' + error);
+    }
     return payload;
   }
 
